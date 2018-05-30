@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"strings"
 	"syscall"
 )
 
@@ -11,30 +12,42 @@ func main() {
 	input_key := "keySecret" //minimum three(3) characters
 	input_data := "here you will find the text"
 
-	inbyte_ik, _ := syscall.ByteSliceFromString(input_key)
-	inbyte_id, _ := syscall.ByteSliceFromString(input_data)
+	//testing
+	e := encode_p(input_key, input_data)
+
+	fmt.Println("Encode:::: ", e)
+
+	d := decoded_p("keySecret", e)
+
+	fmt.Println("Decode:::: ", d)
+
+}
+
+func encode_p(keySecret string, str string) string {
+	inbyte_ik, _ := syscall.ByteSliceFromString(keySecret)
+	inbyte_id, _ := syscall.ByteSliceFromString(str)
 
 	a := jwt.EncodeSegment(inbyte_ik)
 	b := jwt.EncodeSegment(inbyte_id)
 
-	fmt.Println("Cifrado a: ", a)
-	fmt.Println("Cifrado b: ", b)
-
-	var c string
+	var ec string
 	for i := 0; i <= len(inbyte_ik); i += 3 {
-		c += b[i:i+3] + a[i:i+3]
-		fmt.Println(a[i : i+3])
+		ec += b[i:i+3] + a[i:i+3]
 	}
-	c += b[len(inbyte_ik)+3:]
+	ec += b[len(inbyte_ik)+2:]
 
-	fmt.Println(c)
-	fmt.Print(input_data)
+	return ec
+}
 
-	//Testing output
-	niceSecurity, _ := jwt.DecodeSegment(c)
-	normalDecoder, _ := jwt.DecodeSegment(b)
+func decoded_p(keySecret string, encode_p string) string {
+	inbyte_ik, _ := syscall.ByteSliceFromString(keySecret)
 
-	fmt.Println("niceSecurity: ", bytes.NewBuffer(niceSecurity).String())
-	fmt.Println("normalDecoder: ", bytes.NewBuffer(normalDecoder).String())
+	a := jwt.EncodeSegment(inbyte_ik)
 
+	for i := 0; i < (len(a)/3)*3; i += 3 {
+		encode_p = strings.Replace(encode_p, a[i:i+3], "", 1)
+	}
+	de, _ := jwt.DecodeSegment(encode_p)
+
+	return bytes.NewBuffer(de).String()
 }
